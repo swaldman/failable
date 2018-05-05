@@ -76,19 +76,18 @@ sealed trait Failable[+T] {
   def withFilter( p : T => Boolean )     : Failable[T]
 
   // extra ops
-  def exists( f : T => Boolean )                        : Boolean
-  def forall( f : T => Boolean )                        : Boolean 
-  def foreach[U]( f : T => U )                          : Any
-  def getOrElse[ TT >: T ]( or : =>TT )                 : TT
-  def toOption                                          : Option[T]
-  def toSeq                                             : immutable.Seq[T]
-  def flatten[U](implicit evidence : T <:< Failable[U]) : Failable[U]
-  def recover[TT >: T]( f : Failed[T] => TT )           : Failable[TT]
-  def recoverWith[TT >: T]( defaultValue : TT )         : Failable[TT] 
-  def orElse[TT >: T]( other : =>Failable[TT] )         : Failable[TT]
-  def isSucceeded                                       : Boolean
-  //def toWarnable( recoveryFunction : Fail => T ) : Warnable[T]
-  //def toWarnable( recovery : T )                 : Warnable[T] 
+  def exists( f : T => Boolean )                               : Boolean
+  def forall( f : T => Boolean )                               : Boolean 
+  def foreach[U]( f : T => U )                                 : Any
+  def getOrElse[ TT >: T ]( or : =>TT )                        : TT
+  def toOption                                                 : Option[T]
+  def toSeq                                                    : immutable.Seq[T]
+  def flatten[U](implicit evidence : T <:< Failable[U])        : Failable[U]
+  def recover[TT >: T]( f : Failed[T] => TT )                  : Failable[TT]
+  def recoverWith[TT >: T]( defaultValue : TT )                : Failable[TT] 
+  def orElse[TT >: T]( other : =>Failable[TT] )                : Failable[TT]
+  def fold[X]( ff : Failed[T] => X )( fr : T => X )            : X
+  def isSucceeded                                              : Boolean
 }
 
 // kind of yuk, but we've renamed this from "Failure" to "Fail" to avoid inconvenient
@@ -130,17 +129,18 @@ final case class Failed[+T]( message : String, source : Any,  mbStackTrace : Opt
   def withFilter( p : T => Boolean )     : Failable[T] = this
 
   // extra ops
-  def exists( f : T => Boolean )                        : Boolean          = false
-  def forall( f : T => Boolean )                        : Boolean          = true
-  def foreach[U]( f : T => U )                          : Any              = ()
-  def getOrElse[ TT >: T ]( or : =>TT )                 : TT               = or
-  def toOption                                          : Option[T]        = None
-  def toSeq                                             : immutable.Seq[T] = immutable.Seq.empty[T]
-  def flatten[U](implicit evidence : T <:< Failable[U]) : Failable[U]      = refail( this )
-  def recover[TT >: T]( f : Failed[T] => TT )           : Failable[TT]     = try { Succeeded( f( this ) ) } catch ThrowableToFailed
-  def recoverWith[TT >: T]( defaultValue : TT )         : Failable[TT]     = Succeeded( defaultValue )
-  def orElse[TT >: T]( other : =>Failable[TT] )         : Failable[TT]     = other
-  def isSucceeded                                       : Boolean          = false
+  def exists( f : T => Boolean )                               : Boolean          = false
+  def forall( f : T => Boolean )                               : Boolean          = true
+  def foreach[U]( f : T => U )                                 : Any              = ()
+  def getOrElse[ TT >: T ]( or : =>TT )                        : TT               = or
+  def toOption                                                 : Option[T]        = None
+  def toSeq                                                    : immutable.Seq[T] = immutable.Seq.empty[T]
+  def flatten[U](implicit evidence : T <:< Failable[U])        : Failable[U]      = refail( this )
+  def recover[TT >: T]( f : Failed[T] => TT )                  : Failable[TT]     = try { Succeeded( f( this ) ) } catch ThrowableToFailed
+  def recoverWith[TT >: T]( defaultValue : TT )                : Failable[TT]     = Succeeded( defaultValue )
+  def orElse[TT >: T]( other : =>Failable[TT] )                : Failable[TT]     = other
+  def fold[X]( ff : Failed[T] => X )( fr : T => X )            : X                = ff( this )
+  def isSucceeded                                              : Boolean          = false
 }
 final case class Succeeded[+T]( result : T ) extends Failable[T] {
   // monad ops
@@ -149,16 +149,17 @@ final case class Succeeded[+T]( result : T ) extends Failable[T] {
   def withFilter( p : T => Boolean )     : Failable[T] = try { if ( p(result) ) this else Failable.Empty } catch ThrowableToFailed
 
   // extra ops
-  def exists( f : T => Boolean )                        : Boolean           = f(result)
-  def forall( f : T => Boolean )                        : Boolean           = f(result)
-  def foreach[U]( f : T => U )                          : Any               = f(result)
-  def getOrElse[ TT >: T ]( or : =>TT )                 : TT                = result
-  def toOption                                          : Option[T]         = Some( result )
-  def toSeq                                             : immutable.Seq[T]  = immutable.Seq( result ) 
-  def flatten[U](implicit evidence : T <:< Failable[U]) : Failable[U]       = evidence( result )
-  def recover[TT >: T]( f : Failed[T] => TT )           : Failable[TT]      = this
-  def recoverWith[TT >: T]( defaultValue : TT )         : Failable[TT]      = this
-  def orElse[TT >: T]( other : =>Failable[TT] )         : Failable[TT]      = this
-  def isSucceeded                                       : Boolean           = true
+  def exists( f : T => Boolean )                               : Boolean           = f(result)
+  def forall( f : T => Boolean )                               : Boolean           = f(result)
+  def foreach[U]( f : T => U )                                 : Any               = f(result)
+  def getOrElse[ TT >: T ]( or : =>TT )                        : TT                = result
+  def toOption                                                 : Option[T]         = Some( result )
+  def toSeq                                                    : immutable.Seq[T]  = immutable.Seq( result ) 
+  def flatten[U](implicit evidence : T <:< Failable[U])        : Failable[U]       = evidence( result )
+  def recover[TT >: T]( f : Failed[T] => TT )                  : Failable[TT]      = this
+  def recoverWith[TT >: T]( defaultValue : TT )                : Failable[TT]      = this
+  def orElse[TT >: T]( other : =>Failable[TT] )                : Failable[TT]      = this
+  def fold[X]( ff : Failed[T] => X )( fr : T => X )            : X                 = fr( this.result )
+  def isSucceeded                                              : Boolean           = true
 }
 
