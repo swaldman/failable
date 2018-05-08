@@ -41,9 +41,7 @@ sealed trait Failable[+T] {
   def isFailed        : Boolean      = !isSucceeded;
   def asFailed        : Failed[T]    = assertFailed
   def asSucceeded     : Succeeded[T] = assertSucceeded
-
-  @deprecated("Please use assertSucceeded.", "")
-  def get : T = this.assertResult
+  def get             : T            = this.assertResult
 
   // monad ops
   def flatMap[U]( f : T => Failable[U] ) : Failable[U]
