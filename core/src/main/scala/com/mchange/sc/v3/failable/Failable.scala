@@ -39,6 +39,8 @@ sealed trait Failable[+T] {
   def assertSucceeded : Succeeded[T] = this.asInstanceOf[Succeeded[T]]
   def assertFailed    : Failed[T]    = this.asInstanceOf[Failed[T]]
   def isFailed        : Boolean      = !isSucceeded;
+  def asFailed        : Failed[T]    = assertFailed
+  def asSucceeded     : Succeeded[T] = assertSucceeded
 
   @deprecated("Please use assertSucceeded.", "")
   def get : T = this.assertResult
@@ -86,6 +88,8 @@ final object Failed {
     }
   }
   def simple( message : String ) : Failed[Nothing] = Failed( message, message, None );
+
+  val FromThrowable = Failable.ThrowableToFailed
 }
 
 import Failable.{ refail, ThrowableToFailed }
