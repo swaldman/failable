@@ -6,35 +6,8 @@ import scala.util.control.NonFatal
 
 object Failable {
   
-  // the explicit provision of the implicit Failed.Source.ForThrowable param is apparently required when the definition of that parameter comes
-  // later in the compilation unit... Grrr.
-  //
-  // See e.g. https://stackoverflow.com/questions/2731185/why-does-this-explicit-call-of-a-scala-method-allow-it-to-be-implicitly-resolved
-  implicit class FromTry[T]( val attempt : Try[T] ) extends AnyVal {
-    def toFailable : Failable[T] = attempt match {
-      case Success( value )     => succeed( value );
-      case Failure( exception ) => fail( exception, true )( Failed.Source.ForThrowable );
-    }
-  }
-
-  implicit class FromOption[T]( val maybe : Option[T] ) extends AnyVal {
-    def toFailable[ U : Failed.Source ]( source : U = "No information available." ) : Failable[T] = {
-      maybe match {
-        case Some( value )  => succeed( value );
-        case None           => fail( source, true );
-      }
-    }
-  }
-
-  private val WrappedTrue = succeed( true )
-
-  implicit class FailableBoolean( val b : Boolean ) extends AnyVal {
-    def toFailable[ U : Failed.Source ]( source : U = "No information available." ) : Failable[Boolean] = {
-      if (b) WrappedTrue else fail( source )
-    }
-  }
-
   val Empty : Failable[Nothing] = Failed("An attempt to filter or pattern-match a Failable failed, leaving EmptyFailable.", "EmptyFailable", None);
+
   def sequence[T]( failables : Seq[Failable[T]] ) : Failable[immutable.Seq[T]] = {
     failables.foldLeft( succeed( immutable.Seq.empty[T] ) ){ ( fseq, fnext ) =>
       fseq.flatMap( seq => fnext.map( next => seq :+ next ) )
