@@ -1,7 +1,7 @@
 package com.mchange.sc.v3.failable
 
 import scala.collection._
-import scala.util.{Failure,Success,Try}
+import scala.util.Try
 import scala.util.control.NonFatal
 
 object Failable {
