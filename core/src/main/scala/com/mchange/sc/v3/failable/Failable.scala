@@ -36,12 +36,20 @@ object Failable {
 sealed trait Failable[+T] {
   def isEmpty         : Boolean      = this == Failable.Empty
   def assertResult    : T            = assertSucceeded.result
-  def assertSucceeded : Succeeded[T] = this.asInstanceOf[Succeeded[T]]
+  def assertSucceeded : Succeeded[T] = {
+    try {
+      this.asInstanceOf[Succeeded[T]]
+    }
+    catch {
+      case cce : ClassCastException => this.asInstanceOf[Failed[T]].vomit
+    }
+  }
   def assertFailed    : Failed[T]    = this.asInstanceOf[Failed[T]]
   def isFailed        : Boolean      = !isSucceeded;
   def asFailed        : Failed[T]    = assertFailed
   def asSucceeded     : Succeeded[T] = assertSucceeded
   def get             : T            = this.assertResult
+  def assert          : T            = this.assertResult
 
   // monad ops
   def flatMap[U]( f : T => Failable[U] ) : Failable[U]
