@@ -6,7 +6,7 @@ import scala.util.control.NonFatal
 
 object Failable {
   
-  val Empty : Failable[Nothing] = Failed("An attempt to filter or pattern-match a Failable failed, leaving EmptyFailable.", "EmptyFailable", None);
+  val Empty : Failable[Nothing] = Failed("EmptyFailable")("An attempt to filter or pattern-match a Failable failed, leaving EmptyFailable.", None);
 
   def sequence[T]( failables : Seq[Failable[T]] ) : Failable[immutable.Seq[T]] = {
     failables.foldLeft( succeed( immutable.Seq.empty[T] ) ){ ( fseq, fnext ) =>
@@ -90,17 +90,17 @@ final object Failed {
 
     def getFailed( source : T, includeStackTrace : Boolean = true ) : Failed[Nothing] = {
       val mbStackTrace = if ( includeStackTrace ) Some( getStackTrace( source ) ) else None
-      Failed[Nothing]( getMessage( source ), source, mbStackTrace )
+      Failed[Nothing]( source )( getMessage( source ), mbStackTrace )
     }
   }
-  def simple( message : String ) : Failed[Nothing] = Failed( message, message, None );
+  def simple( message : String ) : Failed[Nothing] = Failed( message )( message, None );
 
   val FromThrowable = Failable.ThrowableToFailed
 }
 
 import Failable.{ refail, ThrowableToFailed }
 
-final case class Failed[+T]( message : String, source : Any,  mbStackTrace : Option[Array[StackTraceElement]] ) extends Failable[T] {
+final case class Failed[+T]( val source : Any )( val message : String, val mbStackTrace : Option[Array[StackTraceElement]] ) extends Failable[T] {
   override def toString() : String = "Failed: " + mbStackTrace.fold( message ) { stackTrace =>
     (List( message ) ++ stackTrace).mkString( StackTraceElementSeparator )
   }
