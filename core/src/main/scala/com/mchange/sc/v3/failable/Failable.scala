@@ -78,11 +78,12 @@ final object Failed {
     implicit val ForString = new Failed.Source[String] {
       def getMessage( source : String ) : String = source;
     }
-    implicit val ForThrowable = new Failed.Source[Throwable] {
-      def getMessage( source : Throwable ) : String = s"${source.getClass.getName}: ${source.getMessage()}";
+    implicit def forAnyThrowable[T <: Throwable] = new Failed.Source[T] {
+      def getMessage( source : T ) : String = s"${source.getClass.getName}: ${source.getMessage()}";
 
-      override def getStackTrace( source : Throwable ) = source.getStackTrace;
+      override def getStackTrace( source : T ) = source.getStackTrace;
     }
+    implicit val ForThrowable = this.forAnyThrowable[Throwable]
   }
   trait Source[T] {
     def getMessage( source : T ) : String
