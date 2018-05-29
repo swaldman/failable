@@ -45,6 +45,7 @@ sealed trait Failable[+T] {
     }
   }
   def assertFailed    : Failed[T]    = this.asInstanceOf[Failed[T]]
+  def assertThrowable : Throwable    = this.assertFailed.toThrowable
   def isFailed        : Boolean      = !isSucceeded;
   def asFailed        : Failed[T]    = assertFailed
   def asSucceeded     : Succeeded[T] = assertSucceeded
@@ -105,12 +106,13 @@ final case class Failed[+T]( val source : Any )( val message : String, val mbSta
   override def toString() : String = "Failed: " + mbStackTrace.fold( message ) { stackTrace =>
     (List( message ) ++ stackTrace).mkString( StackTraceElementSeparator )
   }
-  def vomit : Nothing = {
+  def toThrowable : Throwable = {
     source match {
-      case t : Throwable => throw t
-      case _             => throw new NonthrowableFailureException( this );
+      case t : Throwable => t
+      case _             => new NonthrowableFailureException( this );
     }
   }
+  def vomit : Nothing = throw this.toThrowable
 
   // monad ops
   def flatMap[U]( f : T => Failable[U] ) : Failable[U] = refail( this )
