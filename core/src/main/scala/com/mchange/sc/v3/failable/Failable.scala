@@ -105,7 +105,12 @@ final case class Failed[+T]( val source : Any )( val message : String, val mbSta
   override def toString() : String = "Failed: " + mbStackTrace.fold( message ) { stackTrace =>
     (List( message ) ++ stackTrace).mkString( StackTraceElementSeparator )
   }
-  def vomit : Nothing = throw new UnhandledFailureException( this );
+  def vomit : Nothing = {
+    source match {
+      case t : Throwable => throw t
+      case _             => throw new NonthrowableFailureException( this );
+    }
+  }
 
   // monad ops
   def flatMap[U]( f : T => Failable[U] ) : Failable[U] = refail( this )

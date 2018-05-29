@@ -3,7 +3,7 @@ package com.mchange.sc.v3
 import scala.util.{Failure,Success,Try}
 
 package object failable {
-  class UnhandledFailureException( failure : Failed[_] ) extends Exception( failure.toString, failure.source match { case th : Throwable => th; case _ => null } );
+  class NonthrowableFailureException( failure : Failed[_] ) extends Exception( failure.toString, failure.source match { case th : Throwable => th; case _ => null } );
 
   val LineSeparator              = scala.util.Properties.lineSeparator;
   val StackTraceElementSeparator = "  " + LineSeparator
