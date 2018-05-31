@@ -29,7 +29,7 @@ lazy val logging = (project in file("logging")).settings(
 
 lazy val commonSettings = Seq(
   organization := "com.mchange",
-  version := "0.0.1-SNAPSHOT",
+  version := "0.0.1",
   scalaVersion := "2.12.6",
   crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.6"),
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked" /*, "-Xlog-implicits" */)
