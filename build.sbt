@@ -1,18 +1,15 @@
+import com.typesafe.sbt.pgp.PgpKeys._
+
 val mainProjectName = "failable"
 
 lazy val root = (project in file(".")).settings(
   commonSettings,
   publishResolveSettings,
   name := mainProjectName + "-root",
-  clean := {
-    val forceCore = ( core / clean ).value
-    val forceLogging = ( logging / clean ).value
-  },
-  publish := {
-    val forceCore = ( core / publish ).value
-    val forceLogging = ( logging / publish ).value
-  }
-).dependsOn( logging )
+  publish := {},
+  publishLocal := {},
+  publishSigned := {}
+).aggregate( core, logging ).dependsOn( logging )
 
 lazy val core = (project in file("core")).settings(
   commonSettings,
