@@ -22,10 +22,10 @@ package object logging {
     }
     def logRecover[TT >: T]( level : MLevel, recoveryFunction : Failed[T] => TT )( implicit logger : MLogger ) : Failable[TT] = logRecover[TT]( level, recoveryFunction, "" )( logger );
 
-    def logRecoverWith[TT >: T]( level : MLevel, recoveryValue : TT, premessage : => String )( implicit logger : MLogger ) : Failable[TT] = {
-      xlog( level, premessage )( logger ).recoverWith( recoveryValue );
+    def logRecoverWithValue[TT >: T]( level : MLevel, recoveryValue : TT, premessage : => String )( implicit logger : MLogger ) : Failable[TT] = {
+      xlog( level, premessage )( logger ).recover( _ => recoveryValue );
     }
-    def logRecoverWith[TT >: T]( level : MLevel, recoveryValue : TT )( implicit logger : MLogger ) : Failable[TT] = logRecoverWith( level, recoveryValue, "" )( logger );
+    def logRecoverWithValue[TT >: T]( level : MLevel, recoveryValue : TT )( implicit logger : MLogger ) : Failable[TT] = logRecoverWithValue( level, recoveryValue, "" )( logger );
 
     // is the API below just a little too cute?
     def xwarning( premessage : => String = "" )( implicit logger : MLogger ) : Failable[T] = xlog( WARNING, premessage )( logger )

@@ -27,11 +27,15 @@ object Failable {
     */  
   def refail( prefail : Failed[_] ) : Failable[Nothing] = prefail.asInstanceOf[Failable[Nothing]]
 
+  def flatCreate[T]( op : => Failable[T] ) : Failable[T] = UnitSuccess.flatMap( _ => op )
+
   // the explicit provision of the implicit Failed.Source.Throwable param is apparently required when the definition of that parameter comes
   // later in the compilation unit... Grrr.
   //
   // See e.g. https://stackoverflow.com/questions/2731185/why-does-this-explicit-call-of-a-scala-method-allow-it-to-be-implicitly-resolved
   val ThrowableToFailed : PartialFunction[Throwable, Failable[Nothing]] = { case scala.util.control.NonFatal( t : Throwable ) => fail( t )( Failed.Source.ForThrowable ) }
+
+  private val UnitSuccess : Failable[Unit] = succeed( () ) 
 }
 sealed trait Failable[+T] {
   def isEmpty         : Boolean      = this == Failable.Empty
@@ -46,9 +50,9 @@ sealed trait Failable[+T] {
   }
   def assertFailed    : Failed[T]    = this.asInstanceOf[Failed[T]]
   def assertThrowable : Throwable    = this.assertFailed.toThrowable
-  def isFailed        : Boolean      = !isSucceeded;
-  def asFailed        : Failed[T]    = assertFailed
-  def asSucceeded     : Succeeded[T] = assertSucceeded
+  def isFailed        : Boolean      = !this.isSucceeded;
+  def asFailed        : Failed[T]    = this.assertFailed
+  def asSucceeded     : Succeeded[T] = this.assertSucceeded
   def get             : T            = this.assertResult
   def assert          : T            = this.assertResult
 
@@ -66,7 +70,7 @@ sealed trait Failable[+T] {
   def toSeq                                                    : immutable.Seq[T]
   def flatten[U](implicit evidence : T <:< Failable[U])        : Failable[U]
   def recover[TT >: T]( f : Failed[T] => TT )                  : Failable[TT]
-  def recoverWith[TT >: T]( defaultValue : TT )                : Failable[TT] 
+  def recoverWith[TT >: T]( f : Failed[T] => Failable[TT] )    : Failable[TT]
   def orElse[TT >: T]( other : =>Failable[TT] )                : Failable[TT]
   def fold[X]( ff : Failed[T] => X )( fr : T => X )            : X
   def isSucceeded                                              : Boolean
@@ -128,7 +132,7 @@ final case class Failed[+T]( val source : Any )( val message : String, val mbSta
   def toSeq                                                    : immutable.Seq[T] = immutable.Seq.empty[T]
   def flatten[U](implicit evidence : T <:< Failable[U])        : Failable[U]      = refail( this )
   def recover[TT >: T]( f : Failed[T] => TT )                  : Failable[TT]     = try { Succeeded( f( this ) ) } catch ThrowableToFailed
-  def recoverWith[TT >: T]( defaultValue : TT )                : Failable[TT]     = Succeeded( defaultValue )
+  def recoverWith[TT >: T]( f : Failed[T] => Failable[TT] )    : Failable[TT]     = f( this )
   def orElse[TT >: T]( other : =>Failable[TT] )                : Failable[TT]     = other
   def fold[X]( ff : Failed[T] => X )( fr : T => X )            : X                = ff( this )
   def isSucceeded                                              : Boolean          = false
@@ -148,7 +152,7 @@ final case class Succeeded[+T]( result : T ) extends Failable[T] {
   def toSeq                                                    : immutable.Seq[T]  = immutable.Seq( result ) 
   def flatten[U](implicit evidence : T <:< Failable[U])        : Failable[U]       = evidence( result )
   def recover[TT >: T]( f : Failed[T] => TT )                  : Failable[TT]      = this
-  def recoverWith[TT >: T]( defaultValue : TT )                : Failable[TT]      = this
+  def recoverWith[TT >: T]( f : Failed[T] => Failable[TT] )    : Failable[TT]      = this
   def orElse[TT >: T]( other : =>Failable[TT] )                : Failable[TT]      = this
   def fold[X]( ff : Failed[T] => X )( fr : T => X )            : X                 = fr( this.result )
   def isSucceeded                                              : Boolean           = true
