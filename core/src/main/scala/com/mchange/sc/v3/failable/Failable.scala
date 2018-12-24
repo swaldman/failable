@@ -132,7 +132,7 @@ final case class Failed[+T]( val source : Any )( val message : String, val mbSta
   def toSeq                                                    : immutable.Seq[T] = immutable.Seq.empty[T]
   def flatten[U](implicit evidence : T <:< Failable[U])        : Failable[U]      = refail( this )
   def recover[TT >: T]( f : Failed[T] => TT )                  : Failable[TT]     = try { Succeeded( f( this ) ) } catch ThrowableToFailed
-  def recoverWith[TT >: T]( f : Failed[T] => Failable[TT] )    : Failable[TT]     = f( this )
+  def recoverWith[TT >: T]( f : Failed[T] => Failable[TT] )    : Failable[TT]     = try { f( this )              } catch ThrowableToFailed
   def orElse[TT >: T]( other : =>Failable[TT] )                : Failable[TT]     = other
   def fold[X]( ff : Failed[T] => X )( fr : T => X )            : X                = ff( this )
   def isSucceeded                                              : Boolean          = false
