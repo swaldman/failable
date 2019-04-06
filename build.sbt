@@ -21,14 +21,14 @@ lazy val logging = (project in file("logging")).settings(
   commonSettings,
   publishResolveSettings,
   name := mainProjectName + "-logging",
-  libraryDependencies += "com.mchange" %% "mlog-scala" % "0.3.10"
+  libraryDependencies += "com.mchange" %% "mlog-scala" % "0.3.11"
 ).dependsOn( core )
 
 lazy val commonSettings = Seq(
   organization := "com.mchange",
-  version := "0.0.2",
-  scalaVersion := "2.12.6",
-  crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.6"),
+  version := "0.0.3",
+  scalaVersion := "2.12.8",
+  crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.8"),
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked" /*, "-Xlog-implicits" */)
 )
 
