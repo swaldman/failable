@@ -35,7 +35,7 @@ object Failable {
   // See e.g. https://stackoverflow.com/questions/2731185/why-does-this-explicit-call-of-a-scala-method-allow-it-to-be-implicitly-resolved
   val ThrowableToFailed : PartialFunction[Throwable, Failable[Nothing]] = { case scala.util.control.NonFatal( t : Throwable ) => fail( t )( Failed.Source.ForThrowable ) }
 
-  private val UnitSuccess : Failable[Unit] = succeed( () ) 
+  private val UnitSuccess : Failable[Unit] = succeed( () )
 }
 sealed trait Failable[+T] {
   def isEmpty         : Boolean      = this == Failable.Empty
@@ -74,7 +74,20 @@ sealed trait Failable[+T] {
   def orElse[TT >: T]( other : =>Failable[TT] )                : Failable[TT]
   def fold[X]( ff : Failed[T] => X )( fr : T => X )            : X
   def isSucceeded                                              : Boolean
+
+  def orElseTrace[TT >: T]( other : =>Failable[TT] )           : Failable[TT]
 }
+
+
+object SequenceOfFaileds {
+  def apply( previousFailed : Failed[_], currentFailed : Failed[_] ) : SequenceOfFaileds = {
+    previousFailed match {
+      case Failed( sof : SequenceOfFaileds ) => sof.copy( faileds = (sof.faileds :+ currentFailed) )
+      case firstFailed                       => SequenceOfFaileds( immutable.Seq( firstFailed, currentFailed ) )
+    }
+  }
+}
+case class SequenceOfFaileds( faileds : immutable.Seq[Failed[_]] )
 
 // kind of yuk, but we've renamed this from "Failure" to "Fail" to avoid inconvenient
 // need to qualify names when working with scala.util.Failure.
@@ -89,6 +102,21 @@ final object Failed {
       override def getStackTrace( source : T ) = source.getStackTrace;
     }
     implicit val ForThrowable = this.forAnyThrowable[Throwable]
+
+    implicit val ForSequenceOfFaileds = new Failed.Source[SequenceOfFaileds]{
+      def getMessage( source : SequenceOfFaileds ) : String = {
+        val messages = source.faileds.map( _.message ).mkString("; ")
+        s"Multiple failures: ${messages}"
+      }
+      override def getStackTrace( source : SequenceOfFaileds ) = {
+        source.faileds.last.mbStackTrace match {
+          case Some( mbst ) => mbst
+          case None         => super.getStackTrace( source )
+        }
+      }
+    }
+
+
   }
   trait Source[T] {
     def getMessage( source : T ) : String
@@ -136,6 +164,11 @@ final case class Failed[+T]( val source : Any )( val message : String, val mbSta
   def orElse[TT >: T]( other : =>Failable[TT] )                : Failable[TT]     = other
   def fold[X]( ff : Failed[T] => X )( fr : T => X )            : X                = ff( this )
   def isSucceeded                                              : Boolean          = false
+
+  def orElseTrace[TT >: T]( other : =>Failable[TT] ) : Failable[TT] = {
+    val result = other
+    if (result.isFailed) Failable.fail( SequenceOfFaileds( this, result.assertFailed ), false ) else result
+  }
 }
 final case class Succeeded[+T]( result : T ) extends Failable[T] {
   // monad ops
@@ -156,5 +189,7 @@ final case class Succeeded[+T]( result : T ) extends Failable[T] {
   def orElse[TT >: T]( other : =>Failable[TT] )                : Failable[TT]      = this
   def fold[X]( ff : Failed[T] => X )( fr : T => X )            : X                 = fr( this.result )
   def isSucceeded                                              : Boolean           = true
+
+  def orElseTrace[TT >: T]( other : =>Failable[TT] ) : Failable[TT] = this
 }
 
