@@ -27,7 +27,7 @@ object Failable {
     */  
   def refail( prefail : Failed[_] ) : Failable[Nothing] = prefail.asInstanceOf[Failable[Nothing]]
 
-  def flatCreate[T]( op : => Failable[T] ) : Failable[T] = UnitSuccess.flatMap( _ => op )
+  def flatCreate[T]( op : => Failable[T] ) : Failable[T] = Failable.unit.flatMap( _ => op )
 
   // the explicit provision of the implicit Failed.Source.Throwable param is apparently required when the definition of that parameter comes
   // later in the compilation unit... Grrr.
@@ -35,7 +35,7 @@ object Failable {
   // See e.g. https://stackoverflow.com/questions/2731185/why-does-this-explicit-call-of-a-scala-method-allow-it-to-be-implicitly-resolved
   val ThrowableToFailed : PartialFunction[Throwable, Failable[Nothing]] = { case scala.util.control.NonFatal( t : Throwable ) => fail( t )( Failed.Source.ForThrowable ) }
 
-  private val UnitSuccess : Failable[Unit] = succeed( () )
+  val unit : Failable[Unit] = succeed( () )
 }
 sealed trait Failable[+T] {
   def isEmpty         : Boolean      = this == Failable.Empty
