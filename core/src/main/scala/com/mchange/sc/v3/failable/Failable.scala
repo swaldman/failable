@@ -13,6 +13,22 @@ object Failable {
       fseq.flatMap( seq => fnext.map( next => seq :+ next ) )
     }
   }
+
+  def partition[T]( failables : Iterable[Failable[T]] ) : ( Iterable[T], Iterable[Failed[T]] ) = {
+    val ( good, bad ) = failables.partition( _.isSucceeded )
+    ( good.map( _.assert ), bad.map( _.assertFailed ) ) 
+  }
+
+  def partitionAndCombineFailures[T]( failables : Iterable[Failable[T]] ) : ( Iterable[T], Option[Failed[Nothing]] ) = {
+    val ( good, bad ) = partition( failables )
+    if ( bad.isEmpty ) {
+      Tuple2( good, None )
+    }
+    else {
+      Tuple2( good, Some( fail( SequenceOfFaileds( bad.toList ) )( Failed.Source.ForSequenceOfFaileds ).assertFailed ) ) // see ThrowableToFailed below about explicit provision of the Failed.Source
+    }
+  }
+
   def apply[T]( block : =>T ) = Try( block ).toFailable
 
   def succeed[T]( result : T ) : Failable[T] = Succeeded( result )
