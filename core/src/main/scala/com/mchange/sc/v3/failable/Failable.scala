@@ -92,6 +92,8 @@ sealed trait Failable[+T] {
   def isSucceeded                                              : Boolean
 
   def orElseTrace[TT >: T]( other : =>Failable[TT] )           : Failable[TT]
+
+  def and[U]( other : =>Failable[U] ) : Failable[Tuple2[T,U]] = this.flatMap( t => other.map( u => Tuple2(t,u) ) )
 }
 
 
