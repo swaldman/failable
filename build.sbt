@@ -1,4 +1,4 @@
-import com.typesafe.sbt.pgp.PgpKeys._
+//import com.typesafe.sbt.pgp.PgpKeys._
 
 val mainProjectName = "failable"
 
@@ -6,9 +6,10 @@ lazy val root = (project in file(".")).settings(
   commonSettings,
   publishResolveSettings,
   name := mainProjectName + "-root",
-  publish := {},
-  publishLocal := {},
-  publishSigned := {}
+  // publish := {},
+  // publishLocal := {},
+  // publishSigned := {}
+  publishArtifact := false,
 ).aggregate( core, logging ).dependsOn( logging )
 
 lazy val core = (project in file("core")).settings(
@@ -21,14 +22,14 @@ lazy val logging = (project in file("logging")).settings(
   commonSettings,
   publishResolveSettings,
   name := mainProjectName + "-logging",
-  libraryDependencies += "com.mchange" %% "mlog-scala" % "0.3.13"
+  libraryDependencies += "com.mchange" %% "mlog-scala" % "0.3.14"
 ).dependsOn( core )
 
 lazy val commonSettings = Seq(
   organization := "com.mchange",
-  version := "0.0.5",
+  version := "0.0.6",
   scalaVersion := "2.12.10",
-  crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.10"),
+  crossScalaVersions := Seq("2.10.7", "2.11.12", "2.12.17", "2.13.10", "3.2.1"),
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked" /*, "-Xlog-implicits" */)
 )
 
@@ -40,8 +41,8 @@ lazy val publishResolveSettings = {
   Seq(
     resolvers += ("releases" at nexusReleases),
     resolvers += ("snapshots" at nexusSnapshots),
-    resolvers += ("Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases"),
-    resolvers += ("Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"),
+    //resolvers += ("Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases"),
+    resolvers += ("Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"),
     publishTo := {
       val v = version.value
       if (v.trim.endsWith("SNAPSHOT")) {

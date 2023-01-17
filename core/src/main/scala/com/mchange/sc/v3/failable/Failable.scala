@@ -111,17 +111,17 @@ case class SequenceOfFaileds( faileds : immutable.Seq[Failed[_]] )
 // need to qualify names when working with scala.util.Failure.
 final object Failed {
   final object Source {
-    implicit val ForString = new Failed.Source[String] {
+    implicit val ForString : Failed.Source[String] = new Failed.Source[String] {
       def getMessage( source : String ) : String = source;
     }
-    implicit def forAnyThrowable[T <: Throwable] = new Failed.Source[T] {
+    implicit def forAnyThrowable[T <: Throwable] : Failed.Source[T] = new Failed.Source[T] {
       def getMessage( source : T ) : String = s"${source.getClass.getName}: ${source.getMessage()}";
 
       override def getStackTrace( source : T ) = source.getStackTrace;
     }
-    implicit val ForThrowable = this.forAnyThrowable[Throwable]
+    implicit val ForThrowable : Failed.Source[Throwable] = this.forAnyThrowable[Throwable]
 
-    implicit val ForSequenceOfFaileds = new Failed.Source[SequenceOfFaileds]{
+    implicit val ForSequenceOfFaileds : Failed.Source[SequenceOfFaileds] = new Failed.Source[SequenceOfFaileds]{
       def getMessage( source : SequenceOfFaileds ) : String = {
         val messages = source.faileds.map( _.message ).mkString("; ")
         s"Multiple failures: ${messages}"
