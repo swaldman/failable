@@ -1,7 +1,6 @@
 package com.mchange.sc.v3.failable
 
 import scala.collection._
-import scala.util.Try
 import scala.util.control.NonFatal
 
 object Failable {
@@ -29,7 +28,7 @@ object Failable {
     }
   }
 
-  def apply[T]( block : =>T ) = Try( block ).toFailable
+  def apply[T](block: => T) : Failable[T] =  try Succeeded( block ) catch ThrowableToFailed
 
   def succeed[T]( result : T ) : Failable[T] = Succeeded( result )
 
